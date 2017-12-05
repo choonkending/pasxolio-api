@@ -13,6 +13,7 @@ import com.google.api.services.sheets.v4.Sheets
 
 import java.io._
 import java.util.Arrays
+import scala.collection.JavaConverters._
 
 object FetchStocksController {
   private val APPLICATION_NAME = "PASXOLIO-API"
@@ -37,13 +38,13 @@ object FetchStocksController {
         JSON_FACTORY,
         clientSecrets,
         SCOPES)
-      .setDataStoreFactory(DATA_STORE_FACTORY)
-      .setAccessType("offline")
-      .build()
-    new AuthorizationCodeInstalledApp(
-      flow,
-      new LocalServerReceiver()
-    ).authorize("user")
+          .setDataStoreFactory(DATA_STORE_FACTORY)
+          .setAccessType("offline")
+          .build()
+          new AuthorizationCodeInstalledApp(
+            flow,
+            new LocalServerReceiver()
+          ).authorize("user")
   }
 
   private def getSheetsService(): Sheets = {
@@ -52,10 +53,18 @@ object FetchStocksController {
       HTTP_TRANSPORT,
       JSON_FACTORY,
       credential)
-    .setApplicationName(APPLICATION_NAME)
-    .build()
+        .setApplicationName(APPLICATION_NAME)
+        .build()
   }
 
+  private def convertStockRow(row: List[Object]): Either[Throwable, Stock] = {
+    row match {
+      case (name: String) :: (price: String) :: Nil => Right(Stock(name, price))
+      case _ => Left(new RuntimeException("Invalid Row"))
+    }
+  }
+
+  // def fetchStocks(): Either[Throwable, Vector[Stock]] = {
   def fetchStocks(): Unit = {
     val service = getSheetsService()
     val range = "Sheet1!A2:B7"
@@ -66,10 +75,16 @@ object FetchStocksController {
           .get(id, range)
           .execute()
           .getValues()
+          .asScala
+          .map(r => convertStockRow(r.asScala.toList))
+          .toList
+          .collect { case Right(stock) => stock }
+
           println(values)
+
       }
       case _ => {}
     }
   }
-}
+  }
 
