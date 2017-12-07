@@ -2,6 +2,10 @@ package com.choonkending.pasxolio
 
 object Main {
   def main(args: Array[String]): Unit = {
-    FetchStocksController.fetchStocks()
+    val stocks = FetchStocksController.fetchStocks()
+    stocks match {
+      case Right(s) => println(s)
+      case Left(e) => println(e)
+    }
   }
 }

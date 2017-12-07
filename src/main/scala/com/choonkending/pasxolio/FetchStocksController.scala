@@ -64,26 +64,25 @@ object FetchStocksController {
     }
   }
 
-  // def fetchStocks(): Either[Throwable, Vector[Stock]] = {
-  def fetchStocks(): Unit = {
+  def fetchStocks(): Either[Throwable, Vector[Stock]] = {
     val service = getSheetsService()
     val range = "Sheet1!A2:B7"
     val spreadsheetId = sys.env.get("SPREADSHEET_ID")
     spreadsheetId match {
       case Some(id) => {
-        val values = service.spreadsheets().values()
+        val stocks = service.spreadsheets().values()
           .get(id, range)
           .execute()
           .getValues()
           .asScala
           .map(r => convertStockRow(r.asScala.toList))
-          .toList
+          .toVector
           .collect { case Right(stock) => stock }
 
-          println(values)
+          Right(stocks)
 
       }
-      case _ => {}
+      case _ => Left(new RuntimeException("Please provide a SPREADSHEET_ID as an environment variable"))
     }
   }
   }
