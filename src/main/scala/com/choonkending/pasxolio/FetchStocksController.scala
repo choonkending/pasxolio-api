@@ -12,7 +12,7 @@ import com.google.api.services.sheets.v4.SheetsScopes
 import com.google.api.services.sheets.v4.Sheets
 
 import java.io._
-import java.util.Arrays
+import java.util.{Arrays, List => JavaList}
 import scala.collection.JavaConverters._
 
 object FetchStocksController {
@@ -64,26 +64,30 @@ object FetchStocksController {
     }
   }
 
-  def fetchStocks(): Either[Throwable, Vector[Stock]] = {
-    val service = getSheetsService()
+  private def transform(result: JavaList[JavaList[Object]]): Vector[Stock] = {
+    result
+      .asScala
+      .toVector
+      .map(r => convertStockRow(r.asScala.toList))
+      .collect { case Right(stock) => stock }
+  }
+
+  private def fetchGoogleSpreadsheet(id: Option[String], service: Sheets): Option[JavaList[JavaList[Object]]] = {
     val range = "Sheet1!A2:B7"
-    val spreadsheetId = sys.env.get("SPREADSHEET_ID")
-    spreadsheetId match {
-      case Some(id) => {
-        val stocks = service.spreadsheets().values()
-          .get(id, range)
+    id.map(
+      i => service.spreadsheets().values()
+          .get(i, range)
           .execute()
           .getValues()
-          .asScala
-          .map(r => convertStockRow(r.asScala.toList))
-          .toVector
-          .collect { case Right(stock) => stock }
+    )
+  }
 
-          Right(stocks)
-
+  def fetchStocks(): Either[Throwable, Vector[Stock]] = {
+    fetchGoogleSpreadsheet(sys.env.get("SPREADSHEET_ID"), getSheetsService)
+      .map(transform) match {
+        case Some(s) => Right(s)
+        case None => Left(new RuntimeException("Please provide a SPREADSHEET_ID as an environment variable"))
       }
-      case _ => Left(new RuntimeException("Please provide a SPREADSHEET_ID as an environment variable"))
-    }
   }
 
 }
