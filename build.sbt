@@ -12,8 +12,11 @@ name := "PasxolioApi"
 
 mainClass in Compile := Some("com.choonkending.pasxolio.Main")
 
-//  groupID % artifactID % revision
+// groupID % artifactID % revision
+// %% adds your project’s Scala version to the artifact name
+// it is equivalent to % "unfiltered-netty-server_2.12.4"
 libraryDependencies ++= Seq(
+  "ws.unfiltered"           %% "unfiltered-netty-server"    %   "0.9.1",
   "com.google.api-client"   % "google-api-client"           %   "1.23.0",
   "com.google.oauth-client" % "google-oauth-client-jetty"   %   "1.23.0",
   "com.google.apis"         % "google-api-services-sheets"  %   "v4-rev493-1.23.0"
