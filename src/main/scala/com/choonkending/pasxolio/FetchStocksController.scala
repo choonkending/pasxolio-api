@@ -25,6 +25,7 @@ object FetchStocksController {
   private val SCOPES = Arrays.asList(SheetsScopes.SPREADSHEETS_READONLY)
   private val HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport()
   private val DATA_STORE_FACTORY = new FileDataStoreFactory(DATA_STORE_DIR)
+  private val RANGE = "Sheet1!A2:B7"
 
   private def authorize(): Credential = {
     // Load client secrets
@@ -72,8 +73,7 @@ object FetchStocksController {
       .collect { case Right(stock) => stock }
   }
 
-  private def fetchGoogleSpreadsheet(id: Option[String], service: Sheets): Option[JavaList[JavaList[Object]]] = {
-    val range = "Sheet1!A2:B7"
+  private def fetchGoogleSpreadsheet(id: Option[String], service: Sheets, range: String): Option[JavaList[JavaList[Object]]] = {
     id.map(
       i => service.spreadsheets().values()
           .get(i, range)
@@ -83,7 +83,7 @@ object FetchStocksController {
   }
 
   def fetchStocks(): Either[Throwable, Vector[Stock]] = {
-    fetchGoogleSpreadsheet(sys.env.get("SPREADSHEET_ID"), getSheetsService)
+    fetchGoogleSpreadsheet(sys.env.get("SPREADSHEET_ID"), getSheetsService, RANGE)
       .map(transform) match {
         case Some(s) => Right(s)
         case None => Left(new RuntimeException("Please provide a SPREADSHEET_ID as an environment variable"))
