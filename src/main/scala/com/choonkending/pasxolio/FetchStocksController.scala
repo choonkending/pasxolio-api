@@ -85,5 +85,6 @@ object FetchStocksController {
       case _ => Left(new RuntimeException("Please provide a SPREADSHEET_ID as an environment variable"))
     }
   }
-  }
+
+}
 
